@@ -5,6 +5,9 @@
 private var gui : GameObject;
 private var sliderValue : float;
 
+private var height : float;
+private var width : float;
+
 function Start () {
 
 	// Find the GUI
@@ -16,6 +19,6 @@ function Start () {
 
 function Update () {
 	
-	// TODO: Do something...
+	// 
 	
 }
