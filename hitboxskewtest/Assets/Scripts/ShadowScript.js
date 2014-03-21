@@ -16,6 +16,8 @@
 var objToWallDistance : float;		// Stores how far away the GameObject's back edge is from the wall
 var scalingWidthVar : float;		// Stores how the shadow should scale in size with respect to the size of the GameObject
 var scalingHeightVar : float;		// Stores how the shadow should scale in size with respect to the size of the GameObject
+var shadowTexture : Material;		// Stores the texture for the shadow
+var reverseTriWinding : boolean;	// This prevents the "backfacing" problem
 
 private var heightScaleOffset : float;		// This is here so that scaled shadows still line up against the wall!
 
@@ -99,17 +101,23 @@ function ActivateShadow() {
 						   Vector3(tempX - objToWallDistance, tempY + objHeight + heightScaleOffset, tempZ)];
 						   
 	// Define triangles
-	shadowMesh.triangles = [0, 1, 2, 0, 2, 3];
-	
-	// Define UVs
-	shadowMesh.uv = [Vector2 (0, 0), Vector2 (0, 1), Vector2(1, 1), Vector2 (1, 0)];
+	if (reverseTriWinding) {
+		shadowMesh.triangles = [2, 1, 0, 3, 2, 0];
+	}
+	else {
+		shadowMesh.triangles = [0, 1, 2, 0, 2, 3];
+	}
 	
 	// Define normals
 	shadowMesh.RecalculateNormals();
 	
+	// Define UVs
+	shadowMesh.uv = [Vector2 (0, 0), Vector2 (0, 1), Vector2(1, 1), Vector2 (1, 0)];
+	
 	// Create the shadow plane
 	shadow = new GameObject("Shadow_Object_" + gameObject.name, MeshRenderer, MeshFilter, MeshCollider);
 	shadow.GetComponent(MeshFilter).mesh = shadowMesh;
+	shadow.renderer.material = shadowTexture;
 }
 
 /*
@@ -162,14 +170,20 @@ function RedrawShadow() {
 						   Vector3(tempX - objToWallDistance, tempY + objHeight + heightScaleOffset, tempZ)];
 						   
 	// Define triangles
-	shadowMesh.triangles = [0, 1, 2, 0, 2, 3];
-	
-	// Define UVs
-	shadowMesh.uv = [Vector2 (0, 0), Vector2 (0, 1), Vector2(1, 1), Vector2 (1, 0)];
+	if (reverseTriWinding) {
+		shadowMesh.triangles = [2, 1, 0, 3, 2, 0];
+	}
+	else {
+		shadowMesh.triangles = [0, 1, 2, 0, 2, 3];
+	}
 	
 	// Define normals
 	shadowMesh.RecalculateNormals();
 	
+	// Define UVs
+	shadowMesh.uv = [Vector2 (0, 0), Vector2 (0, 1), Vector2(1, 1), Vector2 (1, 0)];
+	
 	// Apply mesh
 	shadow.GetComponent(MeshFilter).mesh = shadowMesh;
+	shadow.renderer.material = shadowTexture;
 }
