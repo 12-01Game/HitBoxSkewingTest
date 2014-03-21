@@ -1,8 +1,8 @@
 ﻿/*
  *	ShadowScript.js
  *
- *	Version 0.0
- *	(C)2014 Jonathan Ballands, All Rights Reserved.
+ *	Version 1.0
+ *	Coded with <3 by Jonathan Ballands
  *
  *	Written for the 12:01 video game for CS 4644
  */
@@ -13,7 +13,11 @@
  *	Fields
  */
  
-var objToWallDistance : float;		// Store how far away the GameObject's edge is from the wall
+var objToWallDistance : float;		// Stores how far away the GameObject's back edge is from the wall
+var scalingWidthVar : float;		// Stores how the shadow should scale in size with respect to the size of the GameObject
+var scalingHeightVar : float;		// Stores how the shadow should scale in size with respect to the size of the GameObject
+
+private var heightScaleOffset : float;		// This is here so that scaled shadows still line up against the wall!
 
 // GUI
 private var gui : GameObject;
@@ -29,8 +33,7 @@ private var objOriginZ : float;		// Stores where the GameObject is in space
 
 // Shadow properties
 private var shadowMesh : Mesh;
-
-// TODO: Have some boolean variables (eg, isMiddle)
+private var shadow : GameObject;
 
 /*
  *	Start()
@@ -48,6 +51,14 @@ function Start () {
 	// Initialize GameObject properties
 	objWidth = collider.bounds.size.z;
 	objHeight = collider.bounds.size.y;
+	objOriginX = collider.transform.position.x;
+	objOriginY = collider.transform.position.y;
+	objOriginZ = collider.transform.position.z;
+	
+	// Do some scaling
+	heightScaleOffset = ((objHeight * scalingHeightVar) - objHeight) / 2;
+	objWidth = objWidth * scalingWidthVar;
+	objHeight = objHeight * scalingWidthVar;
 	
 	// Go
 	ActivateShadow();
@@ -59,9 +70,9 @@ function Start () {
  *	Called as the object updates in realtime.
  */
 function Update () {
-
-	// TODO: Make the shadow move
 	
+	// Just verify the shadow
+	VerifyShadow();
 }
 
 /*
@@ -72,21 +83,20 @@ function Update () {
  */
 function ActivateShadow() {
 
-	// Null check
-	if (shadowMesh != null) {
-		Debug.LogError("The shadow has already be activated for this GameObject");
-		return;
-	}
+	Debug.Log("Activating the shadow...");
 	
 	// Make a new shadow mesh
 	shadowMesh = new Mesh();
 	shadowMesh.name = "Shadow_Mesh_" + gameObject.name;
 
 	// Define vertices
-	shadowMesh.vertices = [Vector3(objOriginX + objToWallDistance, objOriginY, objOriginZ),
-						   Vector3(objOriginX + objToWallDistance, objOriginY, objOriginZ + objWidth),
-						   Vector3(objOriginX + objToWallDistance, objOriginY + objHeight, objOriginZ +objWidth),
-						   Vector3(objOriginX + objToWallDistance, objOriginY + objHeight, objOriginZ)];
+	var tempX : float = objOriginX;
+	var tempY : float = objOriginY - (objWidth / 2);
+	var tempZ : float = objOriginZ - (objHeight / 2);
+	shadowMesh.vertices = [Vector3(tempX - objToWallDistance, tempY + heightScaleOffset, tempZ),
+						   Vector3(tempX - objToWallDistance, tempY + heightScaleOffset, tempZ + objWidth),
+						   Vector3(tempX - objToWallDistance, tempY + objHeight + heightScaleOffset, tempZ +objWidth),
+						   Vector3(tempX - objToWallDistance, tempY + objHeight + heightScaleOffset, tempZ)];
 						   
 	// Define triangles
 	shadowMesh.triangles = [0, 1, 2, 0, 2, 3];
@@ -98,6 +108,68 @@ function ActivateShadow() {
 	shadowMesh.RecalculateNormals();
 	
 	// Create the shadow plane
-	var shadowObj : GameObject = new GameObject("Shadow_Object_" + gameObject.name, MeshRenderer, MeshFilter, MeshCollider);
-	shadowObj.GetComponent(MeshFilter).mesh = shadowMesh;
+	shadow = new GameObject("Shadow_Object_" + gameObject.name, MeshRenderer, MeshFilter, MeshCollider);
+	shadow.GetComponent(MeshFilter).mesh = shadowMesh;
+}
+
+/*
+ *	VerifyShadow()
+ *
+ *	Redraws the shadow with a new skew and position, if necessary.
+ */
+function VerifyShadow() {
+
+	var isInvalid : boolean = false;
+	
+	// If the position has changed, invalidate the shadow
+	var newX : float = collider.transform.position.x;
+	var newY : float = collider.transform.position.y;
+	var newZ : float = collider.transform.position.z;
+	if (!newX.Equals(objOriginX) || !newY.Equals(objOriginY) || !newZ.Equals(objOriginZ)) {
+		
+		// Respecify fields and invalidate
+		objOriginX = newX;
+		objOriginY = newY;
+		objOriginZ = newZ;
+		isInvalid = true;
+	}
+	
+	// TODO: If the skew needs to be changed, invalidate the shadow.
+	
+	// Redraw, if necessary 
+	if (isInvalid) {
+		RedrawShadow();
+	}
+	
+}
+
+/*
+ *	RedrawShadow()
+ *
+ *	
+ */
+function RedrawShadow() {
+
+	Debug.Log("Redrawing the shadow...");
+	
+	// Define vertices
+	var tempX : float = objOriginX;
+	var tempY : float = objOriginY - (objWidth / 2);
+	var tempZ : float = objOriginZ - (objHeight / 2);
+	shadowMesh.vertices = [Vector3(tempX - objToWallDistance, tempY + heightScaleOffset, tempZ),
+						   Vector3(tempX - objToWallDistance, tempY + heightScaleOffset, tempZ + objWidth),
+						   Vector3(tempX - objToWallDistance, tempY + objHeight + heightScaleOffset, tempZ +objWidth),
+						   Vector3(tempX - objToWallDistance, tempY + objHeight + heightScaleOffset, tempZ)];
+						   
+	// Define triangles
+	shadowMesh.triangles = [0, 1, 2, 0, 2, 3];
+	
+	// Define UVs
+	shadowMesh.uv = [Vector2 (0, 0), Vector2 (0, 1), Vector2(1, 1), Vector2 (1, 0)];
+	
+	// Define normals
+	shadowMesh.RecalculateNormals();
+	
+	// Apply mesh
+	shadow.GetComponent(MeshFilter).mesh = shadowMesh;
 }
