@@ -218,16 +218,23 @@ function InitSkewVectors(){
  *
  *	Skews the shadow in relation to the player's position 
  */
+ private var isStatic : boolean = false;
 function SkewShadow(){
 	
 	// TODO : We will need to add an opacity fade-in to the shadow at lightDistance
 
 	var dist : float = verticesOrig[0].z - player.position.z;
-	for (var p : int = 0; p < vertices.length; p++){
-		if(dist > (-1 * lightDistance) && dist < lightDistance){
+	if(dist > (-1 * lightDistance) && dist < lightDistance){
+		for (var p : int = 0; p < vertices.length; p++){
 			vertices[p] = Vector3(verticesOrig[p].x, verticesOrig[p].y, verticesOrig[p].z + skew[p].z * dist);
-		}else{
-			vertices[p] = Vector3(verticesOrig[p].x, verticesOrig[p].y, verticesOrig[p].z);
+		}
+		isStatic = false;
+	}else{
+		if(!isStatic){
+			for (var pt : int = 0; pt < vertices.length; pt++){
+				vertices[pt] = Vector3(verticesOrig[pt].x, verticesOrig[pt].y, verticesOrig[pt].z);
+			}
+			isStatic = true;
 		}
 	}
 	shadowMesh.vertices = vertices;
